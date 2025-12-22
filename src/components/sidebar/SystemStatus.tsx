@@ -11,39 +11,37 @@ interface SystemStatusProps {
 
 export default function SystemStatus({ isConnected, brokerUrl = "192.168.221.4" }: SystemStatusProps) {
   return (
-    <Box sx={{ mb: 4, pl: 1.5 }}>
-      <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.3)", mb: 2, fontSize: '0.7rem', fontWeight: 800, letterSpacing: 1.5, display: "block" }}>
+    <Box sx={{ mb: 3 }}>
+      <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.3)", mb: 2, fontSize: '0.7rem', fontWeight: 800, letterSpacing: 1.5, display: "block", textAlign: "center" }}>
         DIAGNOSTICS
       </Typography>
       
-      <GlassCardSecondary sx={{ p: 2.5, bgcolor: "rgba(255,255,255,0.02)", boxShadow: "inset 0 0 20px rgba(0,0,0,0.1)" }}>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-          <StatusItem 
-            icon={<Wifi size={14} />} 
-            label="Service" 
-            value={isConnected ? "Linked" : "Offline"} 
-            color={isConnected ? "#4caf50" : "#f44336"} 
-          />
-          <StatusItem 
-            icon={<Database size={14} />} 
-            label="Broker IP" 
-            value={brokerUrl} 
-            color="rgba(255,255,255,0.6)" 
-          />
-          <StatusItem 
-            icon={<Cpu size={14} />} 
-            label="Hardware" 
-            value="ESP32-S3" 
-            color="rgba(255,255,255,0.6)" 
-          />
-          <StatusItem 
-            icon={<Activity size={14} />} 
-            label="Uptime" 
-            value={isConnected ? "1h 12m" : "---"} 
-            color="#4caf50" 
-          />
-        </Box>
-      </GlassCardSecondary>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.2 }}>
+        <StatusItem 
+          icon={<Wifi size={14} />} 
+          label="Service" 
+          value={isConnected ? "Linked" : "Offline"} 
+          color={isConnected ? "#4caf50" : "#f44336"} 
+        />
+        <StatusItem 
+          icon={<Database size={14} />} 
+          label="Broker IP" 
+          value={brokerUrl} 
+          color="rgba(255,255,255,0.6)" 
+        />
+        <StatusItem 
+          icon={<Cpu size={14} />} 
+          label="Hardware" 
+          value="ESP32-S3" 
+          color="rgba(255,255,255,0.6)" 
+        />
+        <StatusItem 
+          icon={<Activity size={14} />} 
+          label="Uptime" 
+          value={isConnected ? "1h 12m" : "---"} 
+          color="#4caf50" 
+        />
+      </Box>
     </Box>
   );
 }

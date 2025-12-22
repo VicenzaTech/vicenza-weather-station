@@ -22,9 +22,9 @@ export default function ForecastFooter({ data }: ForecastFooterProps) {
   const labels = ["-5m", "-4m", "-3m", "-2m", "-1m", "Now"];
 
   return (
-    <Box sx={{ mt: "auto", position: "relative", width: "100%", pt: 2 }}>
+    <Box sx={{ mt: "auto", position: "relative", width: "100%", pt: 1.5, pb: 1.5 }}>
       {/* Labels row */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, px: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.8, px: 2 }}>
         {labels.map((label, i) => (
           <Typography 
             key={i} 
@@ -32,8 +32,8 @@ export default function ForecastFooter({ data }: ForecastFooterProps) {
             sx={{ 
                 color: i === 5 ? "#fff" : "rgba(255,255,255,0.4)", 
                 fontWeight: i === 5 ? 700 : 500,
-                fontSize: '0.75rem',
-                letterSpacing: 1
+                fontSize: '0.65rem',
+                letterSpacing: 0.5
             }}
           >
             {label}
@@ -42,7 +42,7 @@ export default function ForecastFooter({ data }: ForecastFooterProps) {
       </Box>
 
       {/* Glowing Chart Area */}
-      <Box sx={{ height: 100, position: "relative", mx: -2 }}>
+      <Box sx={{ height: 70, position: "relative", mx: -2 }}>
         {mounted && (
           <LineChart
             {...({
@@ -56,18 +56,16 @@ export default function ForecastFooter({ data }: ForecastFooterProps) {
                 },
               ],
               slotProps: {
-                legend: { hidden: true }
+                legend: { hidden: true },
               },
-              leftAxis: null,
-              bottomAxis: null,
-              margin: { top: 20, right: 30, left: 30, bottom: 20 },
-              height: 100,
+              margin: { top: 12, right: 20, left: 20, bottom: 12 },
+              height: 70,
               sx: {
                 ".MuiLineElement-root": {
                   strokeWidth: 2,
                   filter: "drop-shadow(0 0 10px rgba(255,255,255,0.8))",
                 },
-              }
+              },
             } as any)}
           />
         )}
@@ -75,8 +73,8 @@ export default function ForecastFooter({ data }: ForecastFooterProps) {
         {/* Glow point highlight on current value */}
         <Box sx={{ 
             position: "absolute", 
-            right: "24px", 
-            bottom: "35px", 
+            right: "18px", 
+            bottom: "25px", 
             width: 8, 
             height: 8, 
             bgcolor: "#fff", 
@@ -87,7 +85,7 @@ export default function ForecastFooter({ data }: ForecastFooterProps) {
       </Box>
 
       {/* Temps row */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0, px: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1, px: 2 }}>
         {chartData.map((temp, i) => (
           <Typography 
             key={i} 
