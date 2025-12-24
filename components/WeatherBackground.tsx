@@ -1,14 +1,17 @@
 'use client'
 
 import { useEffect, useState, memo } from 'react'
+import { getTimeOfDay, getTimeTheme, getCombinedBackground } from '@/lib/timeTheme'
 
 interface WeatherBackgroundProps {
   condition: string
-  isDay?: boolean // Future support for day/night
+  isDay?: boolean // Deprecated - now uses real-time
 }
 
 function WeatherBackground({ condition }: WeatherBackgroundProps) {
   const [weatherType, setWeatherType] = useState('clear')
+  const [currentTime, setCurrentTime] = useState(new Date())
+  const timeTheme = getTimeTheme(getTimeOfDay(currentTime.getHours()))
 
   // List of conditions to map
   // 'Thunderstorm': 'Dông bão'
@@ -26,6 +29,15 @@ function WeatherBackground({ condition }: WeatherBackgroundProps) {
   // 'Tornado': 'Lốc xoáy'
   // 'Clear': 'Trời quang'
   // 'Clouds': 'Có mây'
+
+  // Update current time every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 60000) // Update every minute
+    
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     if (!condition) return
@@ -49,34 +61,9 @@ function WeatherBackground({ condition }: WeatherBackgroundProps) {
     else setWeatherType('clear') // Default to clear
   }, [condition])
 
-  // Helper to determine active background classes
+  // Helper to determine active background classes (now combined with time theme)
   const getGradient = () => {
-    switch (weatherType) {
-      case 'thunderstorm':
-      case 'squall':
-      case 'tornado':
-        return 'from-slate-900 via-indigo-950 to-slate-900'
-      case 'rain':
-      case 'drizzle':
-        return 'from-slate-800 via-slate-700 to-blue-900'
-      case 'snow':
-        return 'from-slate-200 via-blue-100 to-slate-300'
-      case 'mist':
-      case 'fog':
-      case 'haze':
-      case 'smoke':
-        return 'from-stone-400 via-stone-300 to-stone-500' // Grayish
-      case 'dust':
-      case 'sand':
-        return 'from-orange-200 via-amber-200 to-orange-300' // Dusty yellow
-      case 'ash':
-        return 'from-gray-500 via-gray-600 to-gray-700'
-      case 'clouds':
-        return 'from-sky-400 via-blue-400 to-blue-500' // Pretty cloudy sky
-      case 'clear':
-      default:
-        return 'from-cyan-400 via-sky-400 to-blue-500' // Vivid Clear Sky
-    }
+    return getCombinedBackground(weatherType, timeTheme)
   }
 
   return (
@@ -138,14 +125,43 @@ function WeatherBackground({ condition }: WeatherBackgroundProps) {
       {/* --- CLOUDS / CLEAR --- */}
       {(weatherType === 'clear' || weatherType === 'clouds') && (
         <>
-          {/* Sun / Light Source */}
-          <div className="absolute top-[-100px] right-[-100px] w-[600px] h-[600px] bg-gradient-radial from-yellow-200/40 to-transparent blur-3xl opacity-80 animate-pulse-slow"></div>
+          {/* Sun / Moon / Light Source - Based on time */}
+          {(timeTheme.period === 'night' || timeTheme.period === 'evening') ? (
+            // Moon for night/evening
+            <div 
+              className={`absolute w-[500px] h-[500px] bg-gradient-radial from-white/20 via-white/10 to-transparent ${timeTheme.sunMoonPosition.blur} animate-pulse-slow`}
+              style={{
+                top: timeTheme.sunMoonPosition.top,
+                right: timeTheme.sunMoonPosition.right,
+                opacity: timeTheme.sunMoonPosition.opacity,
+              }}
+            ></div>
+          ) : (
+            // Sun for day
+            <div 
+              className={`absolute w-[600px] h-[600px] bg-gradient-radial ${
+                timeTheme.period === 'dawn' ? 'from-orange-300/50 via-pink-200/30' :
+                timeTheme.period === 'morning' ? 'from-yellow-200/60 via-yellow-100/30' :
+                timeTheme.period === 'noon' ? 'from-yellow-200/70 via-yellow-100/40' :
+                'from-orange-300/60 via-red-200/30'
+              } to-transparent ${timeTheme.sunMoonPosition.blur} animate-pulse-slow`}
+              style={{
+                top: timeTheme.sunMoonPosition.top,
+                right: timeTheme.sunMoonPosition.right,
+                opacity: timeTheme.sunMoonPosition.opacity,
+              }}
+            ></div>
+          )}
           
-          {/* Beautiful Fluffy Clouds (CSS Shapes) */}
-          {[...Array(weatherType === 'clouds' ? 8 : 3)].map((_, i) => (
+          {/* Beautiful Fluffy Clouds (CSS Shapes) - Only show during day */}
+          {timeTheme.clouds && [...Array(weatherType === 'clouds' ? 8 : 3)].map((_, i) => (
              <div 
                key={i}
-               className="absolute bg-white/20 blur-xl rounded-full animate-drift-cloud"
+               className={`absolute blur-xl rounded-full animate-drift-cloud ${
+                 timeTheme.period === 'night' ? 'bg-white/5' :
+                 timeTheme.period === 'evening' ? 'bg-white/10' :
+                 'bg-white/20'
+               }`}
                style={{
                  width: `${200 + Math.random() * 300}px`,
                  height: `${100 + Math.random() * 100}px`,
@@ -157,6 +173,46 @@ function WeatherBackground({ condition }: WeatherBackgroundProps) {
              />
           ))}
         </>
+      )}
+
+      {/* Stars for night/evening */}
+      {timeTheme.stars && (
+        <div className="absolute inset-0">
+          {[...Array(50)].map((_, i) => (
+            <div
+              key={i}
+              className={`absolute bg-white rounded-full ${
+                timeTheme.period === 'night' ? 'opacity-80' : 'opacity-40'
+              } animate-twinkle`}
+              style={{
+                width: `${Math.random() * 3 + 1}px`,
+                height: `${Math.random() * 3 + 1}px`,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDuration: `${2 + Math.random() * 3}s`,
+                animationDelay: `${Math.random() * 2}s`
+              }}
+            />
+          ))}
+          {/* Some brighter stars */}
+          {[...Array(10)].map((_, i) => (
+            <div
+              key={`bright-${i}`}
+              className={`absolute bg-white rounded-full ${
+                timeTheme.period === 'night' ? 'opacity-100' : 'opacity-60'
+              } animate-twinkle`}
+              style={{
+                width: `${Math.random() * 2 + 2}px`,
+                height: `${Math.random() * 2 + 2}px`,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDuration: `${3 + Math.random() * 2}s`,
+                animationDelay: `${Math.random() * 3}s`,
+                boxShadow: '0 0 4px white'
+              }}
+            />
+          ))}
+        </div>
       )}
 
       {/* --- FOG / MIST / HAZE / SMOKE / DUST / SAND / ASH --- */}
@@ -218,6 +274,12 @@ function WeatherBackground({ condition }: WeatherBackgroundProps) {
             100% { transform: translateX(0); opacity: 0.2; }
         }
         .animate-mist-2 { animation: mist-2 15s ease-in-out infinite alternate; }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        .animate-twinkle { animation: twinkle ease-in-out infinite; }
       `}</style>
     </div>
   )

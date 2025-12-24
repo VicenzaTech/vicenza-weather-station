@@ -5,29 +5,10 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { getLunarDate } from '@/lib/lunarDate'
+import TimeIndicator from '@/components/TimeIndicator'
 
 export default function Header() {
   const pathname = usePathname()
-  const [currentTime, setCurrentTime] = useState(new Date())
-
-  // Update time every minute
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 60000)
-    return () => clearInterval(timer)
-  }, [])
-
-  const dateStr = currentTime.toLocaleDateString('vi-VN', { 
-    day: 'numeric', 
-    month: 'short' 
-  })
-  const timeStr = currentTime.toLocaleTimeString('vi-VN', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    hour12: false
-  })
-  const lunarDateStr = getLunarDate(currentTime)
 
   const navIcons = [
     {
@@ -82,16 +63,9 @@ export default function Header() {
 
   return (
     <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
-      {/* LEFT: Time and Date */}
+      {/* LEFT: Time and Date - Now using TimeIndicator */}
       <div className="flex items-center gap-3">
-        <div className="glass px-4 py-2 rounded-xl border border-white/10 flex items-center gap-3">
-             <div className="text-white font-bold text-lg">{timeStr}</div>
-             <div className="w-px h-4 bg-white/20"></div>
-             <div className="flex flex-col">
-               <div className="text-white/80 text-sm font-medium uppercase leading-none">{dateStr}</div>
-               <div className="text-white/60 text-[10px] font-medium mt-0.5">{lunarDateStr}</div>
-             </div>
-        </div>
+        <TimeIndicator />
       </div>
 
       {/* CENTER: Navigation (Slide Menu) */}

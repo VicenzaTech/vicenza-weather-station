@@ -11,6 +11,9 @@ import WeatherBackground from '@/components/WeatherBackground'
 import type { SensorData as SensorPayload } from '@/lib/mqttService'
 
 import SensorCharts from '@/components/SensorCharts'
+import AdvancedSensorDashboard from '@/components/AdvancedSensorDashboard'
+import SensorDataTable from '@/components/SensorDataTable'
+import SensorStatistics from '@/components/SensorStatistics'
 
 interface WeatherData {
   current: {
@@ -86,6 +89,17 @@ const emptyWeather: WeatherData = {
 export default function Home() {
   const [sensorData, setSensorData] = useState<SensorPayload | null>(null)
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
+  const [historyData, setHistoryData] = useState<Array<{
+    id: number
+    temp_room: number
+    hum_room: number
+    temp_out: number
+    lux: number
+    ldr_raw: number
+    timestamp: number
+    created_at: string
+  }>>([])
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
 
   // Fetch weather data from API
   useEffect(() => {
@@ -129,6 +143,28 @@ export default function Home() {
     }
   }, [])
 
+  // Fetch sensor history for statistics and table
+  useEffect(() => {
+    const fetchHistory = async () => {
+      setIsLoadingHistory(true)
+      try {
+        const response = await fetch('/api/sensor-history?hours=24&limit=200')
+        if (response.ok) {
+          const result = await response.json()
+          setHistoryData(result.data || [])
+        }
+      } catch (error) {
+        console.error('Error fetching history:', error)
+      } finally {
+        setIsLoadingHistory(false)
+      }
+    }
+
+    fetchHistory()
+    const interval = setInterval(fetchHistory, 60000) // Refresh every minute
+    return () => clearInterval(interval)
+  }, [])
+
   // Merge sensor data with weather data
   const mergedWeatherData = useMemo<WeatherData>(() => {
     const base = weatherData || emptyWeather
@@ -146,7 +182,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen relative overflow-hidden">
-      {/* Dynamic Background */}
+      {/* Dynamic Background - Now time-aware */}
       <WeatherBackground condition={mergedWeatherData.current.weatherMain || 'Clear'} />
 
       {/* Content */}
@@ -188,6 +224,24 @@ export default function Home() {
             <SensorCharts data={sensorData} />
           </div>
 
+          {/* Advanced Dashboard with Multiple Charts */}
+          <div className="mt-8">
+            <div className="flex items-center gap-2 mb-6">
+              <div className="w-1 h-8 bg-gradient-to-b from-blue-400 to-purple-400 rounded-full"></div>
+              <h2 className="text-2xl font-bold text-white">Dashboard Nâng cao</h2>
+            </div>
+            <AdvancedSensorDashboard data={sensorData} />
+          </div>
+
+          {/* Statistics */}
+          <div className="mt-8">
+            <SensorStatistics history={historyData} />
+          </div>
+
+          {/* Data Table */}
+          <div className="mt-8">
+            <SensorDataTable data={historyData} isLoading={isLoadingHistory} />
+          </div>
 
         </div>
       </div>
