@@ -7,6 +7,11 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Vicenza Weather Station',
   description: 'Modern weather forecast application',
+  icons: {
+    icon: '/logo-vicenza.ico',
+    shortcut: '/logo-vicenza.ico',
+    apple: '/logo-vicenza.png',
+  },
 }
 
 export default function RootLayout({

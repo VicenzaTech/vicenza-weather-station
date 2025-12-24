@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { getLunarDate } from '@/lib/lunarDate'
 
@@ -115,8 +116,14 @@ export default function Header() {
       {/* RIGHT: Login / Profile */}
       <div className="flex items-center gap-4">
         <div className="glass rounded-full px-3 py-1.5 pr-5 flex items-center gap-3 hover:bg-white/10 transition-colors cursor-pointer group">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-purple-500/20 group-hover:scale-105 transition-transform">
-            V
+          <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center shadow-lg shadow-purple-500/20 group-hover:scale-105 transition-transform">
+            <Image 
+              src="/logo-vicenza.png" 
+              alt="VICENZA Logo" 
+              width={36} 
+              height={36} 
+              className="object-contain"
+            />
           </div>
           <div className="hidden md:block">
             <div className="text-white text-sm font-semibold">VICENZA</div>
