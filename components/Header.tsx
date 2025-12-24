@@ -1,36 +1,48 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-
+import { usePathname } from 'next/navigation'
 import { getLunarDate } from '@/lib/lunarDate'
 
 export default function Header() {
-  const currentDate = new Date()
-  const dateStr = currentDate.toLocaleDateString('vi-VN', { 
+  const pathname = usePathname()
+  const [currentTime, setCurrentTime] = useState(new Date())
+
+  // Update time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 60000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const dateStr = currentTime.toLocaleDateString('vi-VN', { 
     day: 'numeric', 
     month: 'short' 
   })
-  const timeStr = currentDate.toLocaleTimeString('vi-VN', { 
+  const timeStr = currentTime.toLocaleTimeString('vi-VN', { 
     hour: '2-digit', 
     minute: '2-digit',
     hour12: false
   })
-  const lunarDateStr = getLunarDate(currentDate)
+  const lunarDateStr = getLunarDate(currentTime)
 
   const navIcons = [
     {
-      name: 'search',
+      name: 'home',
       href: '/',
+      title: 'Trang chủ',
       render: (
         <svg viewBox="0 0 24 24" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" fill="none">
-          <circle cx="11" cy="11" r="6" />
-          <line x1="16" y1="16" x2="21" y2="21" strokeLinecap="round" />
+          <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ),
     },
     {
       name: 'map',
       href: '/ban-do',
+      title: 'Bản đồ',
       render: (
         <svg viewBox="0 0 24 24" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" fill="none">
           <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6" />
@@ -40,18 +52,19 @@ export default function Header() {
       ),
     },
     {
-      name: 'notification',
-      href: '#', 
+      name: 'news',
+      href: '/tin-tuc', 
+      title: 'Tin tức',
       render: (
         <svg viewBox="0 0 24 24" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" fill="none">
-           <path d="M6 10a6 6 0 1112 0c0 3 1 4 2 5H4c1-1 2-2 2-5z" strokeLinejoin="round" />
-           <path d="M10 19a2 2 0 004 0" strokeLinecap="round" />
+          <path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ),
     },
     {
       name: 'settings',
       href: '#',
+      title: 'Cài đặt',
       render: (
         <svg viewBox="0 0 24 24" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" fill="none">
           <circle cx="12" cy="12" r="3" />
@@ -60,6 +73,11 @@ export default function Header() {
       ),
     },
   ]
+
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/'
+    return pathname.startsWith(href)
+  }
 
   return (
     <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
@@ -81,8 +99,13 @@ export default function Header() {
           <Link
             key={item.name}
             href={item.href}
-            className="w-10 h-10 rounded-full bg-transparent hover:bg-white/10 flex items-center justify-center text-white/80 hover:text-white transition-all duration-200"
-            aria-label={item.name}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
+              isActive(item.href)
+                ? 'bg-white/20 text-white'
+                : 'bg-transparent text-white/60 hover:bg-white/10 hover:text-white'
+            }`}
+            aria-label={item.title}
+            title={item.title}
           >
             {item.render}
           </Link>
@@ -107,4 +130,3 @@ export default function Header() {
     </div>
   )
 }
-
