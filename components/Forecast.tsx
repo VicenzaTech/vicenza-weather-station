@@ -80,10 +80,10 @@ export default function Forecast({ data }: ForecastProps) {
               className="flex flex-col items-center gap-2 flex-1 group cursor-pointer transition-transform duration-200 hover:scale-105"
             >
               <div className="text-white/60 text-xs font-medium mb-0.5">
-                {item.day.length > 6 ? item.day.slice(0, 6) : item.day}
+                {item.day}
               </div>
               <div className="text-white text-lg md:text-xl font-bold mb-1.5 bg-gradient-to-b from-white to-white/80 bg-clip-text text-transparent">
-                {item.temp}°
+                {Math.round(item.temp)}°
               </div>
               <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-white/10 group-hover:border-white/20 transition-all duration-200">
                 <div className="w-6 h-6">

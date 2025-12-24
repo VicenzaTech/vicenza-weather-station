@@ -179,10 +179,12 @@ export async function GET() {
       // Nếu không đủ 7 ngày, lặp lại dữ liệu
       while (dailyForecast.length < 7) {
         const lastDay = dailyForecast[dailyForecast.length - 1]
-        const nextDayIndex = (dailyForecast.length) % 7
+        const days = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy']
+        const lastDayIndex = days.indexOf(lastDay.day)
+        const nextDayIndex = (lastDayIndex + 1) % 7
         dailyForecast.push({
-          day: getVietnameseDayName(nextDayIndex),
-          temp: lastDay.temp + (Math.random() * 4 - 2),
+          day: days[nextDayIndex],
+          temp: Math.round(lastDay.temp + (Math.random() * 4 - 2)),
           icon: lastDay.icon
         })
       }

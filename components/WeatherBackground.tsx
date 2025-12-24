@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, memo } from 'react'
 
 interface WeatherBackgroundProps {
   condition: string
   isDay?: boolean // Future support for day/night
 }
 
-export default function WeatherBackground({ condition }: WeatherBackgroundProps) {
+function WeatherBackground({ condition }: WeatherBackgroundProps) {
   const [weatherType, setWeatherType] = useState('clear')
 
   // List of conditions to map
@@ -222,3 +222,5 @@ export default function WeatherBackground({ condition }: WeatherBackgroundProps)
     </div>
   )
 }
+
+export default memo(WeatherBackground)
