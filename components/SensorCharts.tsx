@@ -137,7 +137,7 @@ export default function SensorCharts({ data }: SensorChartsProps) {
                     tick={{ fontSize: 10 }} 
                     tickLine={false}
                     axisLine={false}
-                    domain={[0, 100]}
+                    domain={['auto', 'auto']}
                     unit="°C"
                 />
                 <Tooltip content={<CustomTooltip />} />

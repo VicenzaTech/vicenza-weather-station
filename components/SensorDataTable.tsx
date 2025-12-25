@@ -90,6 +90,30 @@ export default function SensorDataTable({ data, isLoading }: SensorDataTableProp
     )
   }
 
+  if (!data || data.length === 0) {
+    return (
+      <div className="glass-strong rounded-2xl p-6 border border-white/15 shadow-lg shadow-slate-900/40">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 3h18v18H3zM3 9h18M9 3v18"/>
+              </svg>
+            </div>
+            <h3 className="text-white text-lg font-semibold">Bảng dữ liệu cảm biến</h3>
+          </div>
+        </div>
+        <div className="text-center py-12 text-white/50">
+          <svg viewBox="0 0 24 24" className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 3h18v18H3zM3 9h18M9 3v18"/>
+          </svg>
+          <p className="text-lg mb-2">Chưa có dữ liệu</p>
+          <p className="text-sm">Đang chờ dữ liệu từ cảm biến...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="glass-strong rounded-2xl p-6 border border-white/15 shadow-lg shadow-slate-900/40">
       <div className="flex items-center justify-between mb-6">

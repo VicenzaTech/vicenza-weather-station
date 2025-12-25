@@ -173,20 +173,27 @@ export default function AdvancedSensorDashboard({ data }: AdvancedSensorDashboar
           hour: '2-digit',
           minute: '2-digit',
         }),
-        temp_room: item.temp_room,
-        temp_out: item.temp_out,
-        hum_room: item.hum_room,
-        lux: item.lux,
-        ldr_raw: item.ldr_raw,
+        temp_room: item.temp_room || 0,
+        temp_out: item.temp_out || 0,
+        hum_room: item.hum_room || 0,
+        lux: item.lux || 0,
+        ldr_raw: item.ldr_raw || 0,
       })).slice(-30) // Last 30 points
     }
-    return history.slice(-30)
+    return history.slice(-30).map(item => ({
+      ...item,
+      temp_room: item.temp_room || 0,
+      temp_out: item.temp_out || 0,
+      hum_room: item.hum_room || 0,
+      lux: item.lux || 0,
+      ldr_raw: item.ldr_raw || 0,
+    }))
   }, [dbHistory, history])
 
-  if (history.length < 2 && !dbHistory) {
+  if (chartData.length < 2) {
     return (
       <div className="glass-strong rounded-2xl p-6 border border-white/15 min-h-[300px] flex items-center justify-center">
-        <div className="text-white/50 animate-pulse">Đang thu thập dữ liệu biểu đồ...</div>
+        <div className="text-white/50 animate-pulse">Đang thu thập dữ liệu biểu đồ... (Cần ít nhất 2 điểm dữ liệu)</div>
       </div>
     )
   }
@@ -208,16 +215,6 @@ export default function AdvancedSensorDashboard({ data }: AdvancedSensorDashboar
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorTempRoomLine" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#f87171" stopOpacity={0.8}/>
-                    <stop offset="100%" stopColor="#ef4444" stopOpacity={0.8}/>
-                  </linearGradient>
-                  <linearGradient id="colorTempOutLine" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#facc15" stopOpacity={0.8}/>
-                    <stop offset="100%" stopColor="#eab308" stopOpacity={0.8}/>
-                  </linearGradient>
-                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
                 <XAxis 
                   dataKey="time" 
@@ -232,7 +229,7 @@ export default function AdvancedSensorDashboard({ data }: AdvancedSensorDashboar
                   tick={{ fontSize: 10 }} 
                   tickLine={false}
                   axisLine={false}
-                  domain={['dataMin - 2', 'dataMax + 2']}
+                  domain={['auto', 'auto']}
                   unit="°C"
                 />
                 <Tooltip content={<CustomTooltip />} />
@@ -241,7 +238,7 @@ export default function AdvancedSensorDashboard({ data }: AdvancedSensorDashboar
                   type="monotone" 
                   dataKey="temp_room" 
                   name="Trong phòng" 
-                  stroke="url(#colorTempRoomLine)" 
+                  stroke="#f87171" 
                   strokeWidth={3}
                   dot={false}
                   activeDot={{ r: 5 }}
@@ -252,7 +249,7 @@ export default function AdvancedSensorDashboard({ data }: AdvancedSensorDashboar
                   type="monotone" 
                   dataKey="temp_out" 
                   name="Ngoài trời" 
-                  stroke="url(#colorTempOutLine)" 
+                  stroke="#facc15" 
                   strokeWidth={3}
                   dot={false}
                   activeDot={{ r: 5 }}

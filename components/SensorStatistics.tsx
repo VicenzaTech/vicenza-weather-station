@@ -108,6 +108,25 @@ export default function SensorStatistics({ history }: SensorStatisticsProps) {
     },
   ]
 
+  if (!history || history.length === 0) {
+    return (
+      <div className="glass-strong rounded-2xl p-6 border border-white/15 shadow-lg shadow-slate-900/40">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm0 0V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10m-6 0a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2m0 0V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/>
+            </svg>
+          </div>
+          <h3 className="text-white text-lg font-semibold">Thống kê dữ liệu</h3>
+        </div>
+        <div className="text-center py-8 text-white/50">
+          <p>Chưa có dữ liệu để thống kê</p>
+          <p className="text-sm mt-2">Đang chờ dữ liệu từ cảm biến...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="glass-strong rounded-2xl p-6 border border-white/15 shadow-lg shadow-slate-900/40">
       <div className="flex items-center gap-2 mb-6">
