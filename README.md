@@ -40,18 +40,29 @@
 
 ```
 Local MQTT Broker (192.168.221.4) → Next.js Backend → Frontend
+                                            ↓
+                                        MongoDB (reads)
 ```
 
-Backend directly subscribes to local MQTT broker for real-time sensor data.
+Backend subscribes to local MQTT broker for real-time sensor data and reads historical data from MongoDB.
 
 ### Production (Vercel)
 
 ```
-Local MQTT Broker → Docker Bridge Service → HiveMQ → Vercel Backend → Frontend
+IoT Device → Local MQTT Broker → mqtt-bridge → MongoDB + HiveMQ
+                                                     ↓
+                                    Vercel Backend (reads MongoDB + subscribes HiveMQ)
+                                                     ↓
+                                                 Frontend (SSE)
 ```
 
-- **Docker Bridge Service**: Runs independently, publishes data to HiveMQ every 5 minutes
-- **Vercel Backend**: Subscribes to HiveMQ to retrieve sensor data
+- **mqtt-bridge Service**: 
+  - Subscribes to Local MQTT Broker
+  - Saves all readings to **MongoDB**
+  - Publishes to **HiveMQ** every 5 minutes (with retain flag)
+- **Vercel Backend**: 
+  - Subscribes to **HiveMQ** for real-time updates
+  - Reads historical data from **MongoDB**
 - **Frontend**: Displays real-time data via Server-Sent Events (SSE)
 
 ## Getting Started
@@ -61,7 +72,8 @@ Local MQTT Broker → Docker Bridge Service → HiveMQ → Vercel Backend → Fr
 - Node.js 18+ installed
 - npm or yarn package manager
 - MQTT broker reachable (default `192.168.221.4:1883`)
-- Docker (optional, for bridge service)
+- MongoDB (local or MongoDB Atlas)
+- Docker (optional, for bridge service and MongoDB)
 
 ### Installation
 
@@ -88,12 +100,16 @@ cp env.local.example .env.local
 
 Edit `.env.local` with your configuration (see [Configuration](#configuration) section).
 
-4. **Run database migrations**
+4. **Set up MongoDB**
 
+See [MONGODB_SETUP.md](MONGODB_SETUP.md) for detailed MongoDB setup instructions.
+
+Quick start with Docker:
 ```bash
-npx prisma generate
-npx prisma migrate dev
+docker-compose up -d mongodb
 ```
+
+Or use MongoDB Atlas (cloud) - recommended for production.
 
 5. **Start the development server**
 
@@ -119,6 +135,15 @@ LOCAL_MQTT_PORT=1883
 LOCAL_MQTT_TOPIC=vicenza/weather/data
 # LOCAL_MQTT_USERNAME=
 # LOCAL_MQTT_PASSWORD=
+```
+
+#### MongoDB Configuration
+
+```env
+MONGODB_URI=mongodb://localhost:27017
+# Or for MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net
+MONGODB_DB=vicenza_weather
 ```
 
 #### HiveMQ Configuration (for Vercel deployment)
@@ -227,8 +252,9 @@ vicenza/weather/data
 
 ### Backend Behavior
 
-- **Local Development**: MQTT client subscribes from local broker
-- **Vercel Production**: MQTT client subscribes from HiveMQ (when `HIVEMQ_HOST` is set)
+- **Local Development**: MQTT client subscribes from local broker, reads from MongoDB
+- **Vercel Production**: MQTT client subscribes from HiveMQ (when `HIVEMQ_HOST` is set), reads from MongoDB
+- **mqtt-bridge**: Saves all data to MongoDB and publishes to HiveMQ every 5 minutes
 
 ### API Endpoints
 
@@ -264,19 +290,19 @@ vicenza-weather-station/
 │   └── SensorStatistics.tsx      # Sensor statistics
 ├── lib/
 │   ├── mqttService.ts            # MQTT client singleton (supports local MQTT and HiveMQ)
-│   ├── db.ts                     # Database utilities
+│   ├── mongodb.ts                # MongoDB connection and utilities
+│   ├── db.ts                     # Database wrapper (uses MongoDB)
 │   └── timeTheme.ts              # Time-based theme utilities
 ├── mqtt-bridge/
 │   ├── Dockerfile                # Dockerfile for bridge service
 │   ├── index.js                  # Bridge service code
+│   ├── mongodb.js                # MongoDB helper for bridge
 │   ├── package.json              # Dependencies for bridge service
 │   └── README.md                 # Bridge service documentation
-├── prisma/
-│   ├── schema.prisma             # Database schema
-│   └── migrations/               # Database migrations
-├── docker-compose.yml            # Docker Compose configuration
+├── docker-compose.yml            # Docker Compose configuration (includes MongoDB)
 ├── Dockerfile                    # Main application Dockerfile
 ├── env.local.example             # Environment variables example
+├── MONGODB_SETUP.md              # MongoDB setup guide
 └── package.json
 ```
 
@@ -286,8 +312,9 @@ vicenza-weather-station/
 - **[TypeScript](https://www.typescriptlang.org/)** - Type safety
 - **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
 - **[React](https://reactjs.org/)** - UI library
-- **[Prisma](https://www.prisma.io/)** - Database ORM
+- **[MongoDB](https://www.mongodb.com/)** - NoSQL database for sensor data
 - **[MQTT](https://mqtt.org/)** - IoT messaging protocol
+- **[HiveMQ](https://www.hivemq.com/)** - Cloud MQTT broker
 - **[Server-Sent Events (SSE)](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)** - Real-time data streaming
 - **[Recharts](https://recharts.org/)** - Chart library for data visualization
 
@@ -308,15 +335,23 @@ vicenza-weather-station/
    Add the following environment variables in Vercel:
 
    ```env
+   # MongoDB
+   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net
+   MONGODB_DB=vicenza_weather
+   
+   # HiveMQ
    HIVEMQ_HOST=your-hivemq-broker.hivemq.cloud
    HIVEMQ_PORT=8883
    HIVEMQ_TOPIC=vicenza/weather/data
    HIVEMQ_USERNAME=your-username
    HIVEMQ_PASSWORD=your-password
    HIVEMQ_CLIENT_ID=vicenza-client
+   
+   # Weather API (optional)
    WEATHER_API_KEY=your-openweathermap-api-key
-   DATABASE_URL=your-database-url
    ```
+   
+   **Important**: Use MongoDB Atlas for Vercel deployment. See [MONGODB_SETUP.md](MONGODB_SETUP.md).
 
 4. **Deploy**
 

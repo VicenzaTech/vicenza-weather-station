@@ -4,13 +4,20 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=file:/app/data/prod.db
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017}
+      - MONGODB_DB=${MONGODB_DB:-vicenza_weather}
       - MQTT_HOST=host.docker.internal
       - MQTT_PORT=1883
       - MQTT_TOPIC=vicenza/weather/data
       - WEATHER_API_KEY=${WEATHER_API_KEY:-}
-    volumes:
-      - sqlite-data:/app/data
+      - HIVEMQ_HOST=${HIVEMQ_HOST}
+      - HIVEMQ_PORT=${HIVEMQ_PORT:-8883}
+      - HIVEMQ_TOPIC=${HIVEMQ_TOPIC:-vicenza/weather/data}
+      - HIVEMQ_USERNAME=${HIVEMQ_USERNAME}
+      - HIVEMQ_PASSWORD=${HIVEMQ_PASSWORD}
+      - HIVEMQ_CLIENT_ID=${HIVEMQ_CLIENT_ID:-vicenza-client}
+    depends_on:
+      - mongodb
     restart: unless-stopped
 
   mqtt-bridge:
@@ -27,8 +34,18 @@ services:
       - HIVEMQ_USERNAME=${HIVEMQ_USERNAME}
       - HIVEMQ_PASSWORD=${HIVEMQ_PASSWORD}
       - HIVEMQ_CLIENT_ID=${HIVEMQ_CLIENT_ID:-vicenza-bridge}
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017}
+      - MONGODB_DB=${MONGODB_DB:-vicenza_weather}
     network_mode: host
     restart: unless-stopped
 
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    restart: unless-stopped
+
 volumes:
-  sqlite-data:
+  mongodb-data:

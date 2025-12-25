@@ -1,11 +1,12 @@
 /**
  * MQTT Bridge Service
  * 
- * Service này chạy trong Docker, subscribe dữ liệu từ MQTT broker local
- * và đẩy lên HiveMQ mỗi 5 phút.
+ * Service này chạy trong Docker, subscribe dữ liệu từ MQTT broker local,
+ * lưu vào MongoDB, và đẩy lên HiveMQ mỗi 5 phút.
  */
 
 const mqtt = require('mqtt')
+const mongoService = require('./mongodb')
 require('dotenv').config()
 
 // Local MQTT Configuration
@@ -54,6 +55,9 @@ class MqttBridge {
     console.log(`[Bridge] Publish interval: ${PUBLISH_INTERVAL_MS / 1000} giây`)
 
     this.isRunning = true
+
+    // Connect to MongoDB
+    await mongoService.connect()
 
     // Connect to local MQTT broker
     await this.connectToLocalMQTT()
@@ -120,6 +124,11 @@ class MqttBridge {
           this.latestData = data
           const timeStr = new Date(data.timestamp * 1000).toLocaleString('vi-VN')
           console.log(`[Local MQTT] Nhận dữ liệu mới: ${JSON.stringify(data)} (${timeStr})`)
+          
+          // Save to MongoDB
+          mongoService.saveSensorReading(data).catch(err => {
+            console.error('[Local MQTT] Lỗi lưu vào MongoDB:', err.message)
+          })
         } catch (error) {
           console.error('[Local MQTT] Lỗi parse message:', error)
         }
@@ -211,7 +220,8 @@ class MqttBridge {
 
     const payload = JSON.stringify(this.latestData)
     
-    this.hivemqClient.publish(HIVEMQ_TOPIC, payload, { qos: 1 }, (err) => {
+    // Publish with QoS 1 and retain flag so Vercel backend can receive it even if subscribing after publish
+    this.hivemqClient.publish(HIVEMQ_TOPIC, payload, { qos: 1, retain: true }, (err) => {
       if (err) {
         console.error('[HiveMQ] Lỗi publish:', err)
       } else {
@@ -222,7 +232,7 @@ class MqttBridge {
     })
   }
 
-  shutdown() {
+  async shutdown() {
     console.log('\n[Bridge] Đang dừng service...')
     
     this.isRunning = false
@@ -241,6 +251,9 @@ class MqttBridge {
       this.hivemqClient.end()
       console.log('[HiveMQ] Đã ngắt kết nối')
     }
+
+    // Disconnect from MongoDB
+    await mongoService.disconnect()
 
     console.log('[Bridge] Service đã dừng')
     process.exit(0)

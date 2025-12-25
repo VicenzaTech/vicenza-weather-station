@@ -1,5 +1,4 @@
 import mqtt, { MqttClient } from 'mqtt'
-import { saveSensorReading } from './db'
 
 export interface SensorData {
   temp_room: number
@@ -47,7 +46,14 @@ class MqttService {
   private errorThrottleMs = 10000 // Chỉ log lỗi mỗi 10 giây
 
   connect() {
-    if (this.client || this.connecting) return
+    if (this.client || this.connecting) {
+      if (this.client?.connected) {
+        console.log('[MQTT] Already connected, skipping connection attempt')
+      } else {
+        console.log('[MQTT] Connection already in progress, skipping')
+      }
+      return
+    }
     this.connecting = true
 
     // Determine protocol based on port and broker type
@@ -60,6 +66,7 @@ class MqttService {
     const url = `${protocol}://${MQTT_HOST}:${MQTT_PORT}`
     const brokerType = USE_HIVEMQ ? 'HiveMQ' : 'Local MQTT'
     console.log(`[MQTT] Connecting to ${brokerType}: ${url}`)
+    console.log(`[MQTT] Topic: ${MQTT_TOPIC}, Client ID: ${USE_HIVEMQ ? HIVEMQ_CLIENT_ID : `local-client-${Date.now()}`}`)
 
     const options: any = {
       username: MQTT_USERNAME,
@@ -89,17 +96,22 @@ class MqttService {
       const brokerType = USE_HIVEMQ ? 'HiveMQ' : 'Local MQTT'
       console.log(`[MQTT] Connected to ${brokerType} at ${MQTT_HOST}:${MQTT_PORT}`)
       
-      this.client?.subscribe(MQTT_TOPIC, (err) => {
+      // Subscribe with QoS 1 to ensure message delivery, and request retained messages
+      this.client?.subscribe(MQTT_TOPIC, { qos: 1 }, (err) => {
         if (err) {
           console.error('[MQTT] Subscribe error:', err)
         } else {
-          console.log(`[MQTT] Subscribed to topic: ${MQTT_TOPIC}`)
+          console.log(`[MQTT] Subscribed to topic: ${MQTT_TOPIC} (QoS: 1)`)
+          console.log(`[MQTT] Waiting for messages from ${brokerType}...`)
         }
       })
     })
 
     this.client.on('message', (topic, payload) => {
       try {
+        const brokerType = USE_HIVEMQ ? 'HiveMQ' : 'Local MQTT'
+        console.log(`[MQTT] Received message from ${brokerType} on topic: ${topic}`)
+        
         const parsed = JSON.parse(payload.toString())
         const data: SensorData = {
           temp_room: Number(parsed.temp_room) || 0,
@@ -119,12 +131,22 @@ class MqttService {
         
         this.latestData = data
         
-        // Save to database
-        this.saveToDb(data)
+        const timeStr = new Date(data.timestamp * 1000).toLocaleString('vi-VN')
+        console.log(`[MQTT] Processed sensor data from ${brokerType}:`, {
+          temp_room: data.temp_room,
+          hum_room: data.hum_room,
+          temp_out: data.temp_out,
+          lux: data.lux,
+          timestamp: timeStr
+        })
+        
+        // Note: Database saving is handled by mqtt-bridge service, not here
+        // Vercel backend only reads from MongoDB, doesn't write to it
         
         this.notify(data)
       } catch (error) {
         console.error('[MQTT] Message parse error:', error)
+        console.error('[MQTT] Raw payload:', payload.toString())
       }
     })
 
@@ -199,21 +221,6 @@ class MqttService {
       } catch (err) {
         console.error('MQTT subscriber error:', err)
       }
-    }
-  }
-
-  private async saveToDb(data: SensorData) {
-    try {
-      await saveSensorReading({
-        tempRoom: data.temp_room,
-        humRoom: data.hum_room,
-        tempOut: data.temp_out,
-        lux: data.lux,
-        ldrRaw: data.ldr_raw,
-        timestamp: new Date(data.timestamp * 1000),
-      })
-    } catch (err) {
-      console.error('[MQTT] Error saving to database:', err)
     }
   }
 }

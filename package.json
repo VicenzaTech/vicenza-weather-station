@@ -9,15 +9,14 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.1",
     "@types/leaflet": "^1.9.21",
     "axios": "^1.6.2",
     "dotenv": "^17.2.3",
     "leaflet": "^1.9.4",
     "lunar-javascript": "^1.7.7",
+    "mongodb": "^6.3.0",
     "mqtt": "^5.5.0",
     "next": "14.0.4",
-    "prisma": "^6.19.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-leaflet": "^4.2.1",
