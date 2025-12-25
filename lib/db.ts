@@ -20,9 +20,17 @@ export interface SensorDataInput {
 
 /**
  * Save a sensor reading to the database
+ * Note: On Vercel, file-based SQLite doesn't work. Use a cloud database instead.
  */
 export async function saveSensorReading(data: SensorDataInput) {
   try {
+    // Check if database is available (not file-based SQLite on Vercel)
+    const dbUrl = process.env.DATABASE_URL || ''
+    if (dbUrl.startsWith('file:') && process.env.VERCEL) {
+      console.warn('[DB] File-based SQLite not supported on Vercel. Skipping database save.')
+      return null
+    }
+
     const reading = await prisma.sensorReading.create({
       data: {
         tempRoom: data.tempRoom,
@@ -42,9 +50,17 @@ export async function saveSensorReading(data: SensorDataInput) {
 
 /**
  * Get the latest sensor reading from the database
+ * Note: On Vercel, file-based SQLite doesn't work. Use a cloud database instead.
  */
 export async function getLatestSensorReading() {
   try {
+    // Check if database is available (not file-based SQLite on Vercel)
+    const dbUrl = process.env.DATABASE_URL || ''
+    if (dbUrl.startsWith('file:') && process.env.VERCEL) {
+      console.warn('[DB] File-based SQLite not supported on Vercel. Returning null.')
+      return null
+    }
+
     const reading = await prisma.sensorReading.findFirst({
       orderBy: { createdAt: 'desc' }
     })
@@ -57,9 +73,17 @@ export async function getLatestSensorReading() {
 
 /**
  * Get sensor readings within a time range
+ * Note: On Vercel, file-based SQLite doesn't work. Use a cloud database instead.
  */
 export async function getSensorReadings(from: Date, to: Date, limit = 100) {
   try {
+    // Check if database is available (not file-based SQLite on Vercel)
+    const dbUrl = process.env.DATABASE_URL || ''
+    if (dbUrl.startsWith('file:') && process.env.VERCEL) {
+      console.warn('[DB] File-based SQLite not supported on Vercel. Returning empty array.')
+      return []
+    }
+
     const readings = await prisma.sensorReading.findMany({
       where: {
         timestamp: {
