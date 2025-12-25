@@ -156,40 +156,57 @@ class MqttBridge {
       const url = `${protocol}://${HIVEMQ_HOST}:${HIVEMQ_PORT}`
       
       console.log(`[HiveMQ] Đang kết nối đến ${url}...`)
+      console.log(`[HiveMQ] Client ID: ${HIVEMQ_CLIENT_ID}`)
 
       const options = {
         username: HIVEMQ_USERNAME,
         password: HIVEMQ_PASSWORD,
-        reconnectPeriod: 5000,
-        connectTimeout: 10000,
-        keepalive: 30,
+        reconnectPeriod: 10000, // Tăng lên 10s để tránh reconnect quá nhanh
+        connectTimeout: 30000, // Tăng timeout lên 30s
+        keepalive: 60, // Tăng keepalive lên 60s cho HiveMQ Cloud
         clientId: HIVEMQ_CLIENT_ID,
+        clean: true, // Clean session
+        protocolVersion: 4, // MQTT 3.1.1
       }
 
       // Add TLS options for secure connection (mqtts)
       if (protocol === 'mqtts') {
-        options.rejectUnauthorized = false // Set to true in production with proper certificates
+        options.rejectUnauthorized = true // Use proper TLS validation for HiveMQ Cloud
       }
 
       this.hivemqClient = mqtt.connect(url, options)
 
-      this.hivemqClient.on('connect', () => {
-        console.log(`[HiveMQ] Đã kết nối đến ${HIVEMQ_HOST}:${HIVEMQ_PORT}`)
+      this.hivemqClient.on('connect', (connack) => {
+        console.log(`[HiveMQ] ✅ Đã kết nối đến ${HIVEMQ_HOST}:${HIVEMQ_PORT}`)
+        console.log(`[HiveMQ] Session present: ${connack.sessionPresent}`)
         resolve()
       })
 
       this.hivemqClient.on('error', (err) => {
-        console.error('[HiveMQ] Lỗi kết nối:', err.message)
-        reject(err)
+        console.error('[HiveMQ] ❌ Lỗi kết nối:', err.message)
+        console.error('[HiveMQ] Error details:', err)
+        // Don't reject immediately, let reconnect logic handle it
       })
 
       this.hivemqClient.on('close', () => {
-        console.log('[HiveMQ] Kết nối đã đóng')
+        console.log('[HiveMQ] ⚠️ Kết nối đã đóng')
+      })
+
+      this.hivemqClient.on('offline', () => {
+        console.log('[HiveMQ] ⚠️ Client offline')
       })
 
       this.hivemqClient.on('reconnect', () => {
-        console.log('[HiveMQ] Đang kết nối lại...')
+        console.log('[HiveMQ] 🔄 Đang kết nối lại...')
       })
+
+      // Timeout for initial connection
+      setTimeout(() => {
+        if (!this.hivemqClient || !this.hivemqClient.connected) {
+          console.warn('[HiveMQ] ⏱️ Connection timeout, nhưng sẽ tiếp tục retry...')
+          resolve() // Resolve anyway to not block the service
+        }
+      }, 30000)
     })
   }
 
