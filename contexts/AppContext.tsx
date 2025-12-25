@@ -103,35 +103,27 @@ function isCacheValid(timestamp: number, duration: number): boolean {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [sensorData, setSensorData] = useState<SensorData | null>(null)
-  const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
-  const [historyData, setHistoryData] = useState<HistoryDataItem[]>([])
+  // Initialize state with cache immediately (synchronous) - no useEffect needed
+  const historyCache = typeof window !== 'undefined' ? getCachedData<HistoryDataItem[]>(CACHE_KEYS.HISTORY) : null
+  const weatherCache = typeof window !== 'undefined' ? getCachedData<WeatherData>(CACHE_KEYS.WEATHER) : null
+  const sensorCache = typeof window !== 'undefined' ? getCachedData<SensorData>(CACHE_KEYS.SENSOR) : null
+
+  const [sensorData, setSensorData] = useState<SensorData | null>(
+    sensorCache && isCacheValid(sensorCache.timestamp, CACHE_DURATION.SENSOR) ? sensorCache.data : null
+  )
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(
+    weatherCache && isCacheValid(weatherCache.timestamp, CACHE_DURATION.WEATHER) ? weatherCache.data : null
+  )
+  const [historyData, setHistoryData] = useState<HistoryDataItem[]>(
+    historyCache && isCacheValid(historyCache.timestamp, CACHE_DURATION.HISTORY) ? historyCache.data : []
+  )
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
-  const [lastWeatherUpdate, setLastWeatherUpdate] = useState<Date | null>(null)
-  const [lastHistoryUpdate, setLastHistoryUpdate] = useState<Date | null>(null)
-
-  // Load cached data on mount
-  useEffect(() => {
-    // Load weather cache
-    const weatherCache = getCachedData<WeatherData>(CACHE_KEYS.WEATHER)
-    if (weatherCache && isCacheValid(weatherCache.timestamp, CACHE_DURATION.WEATHER)) {
-      setWeatherData(weatherCache.data)
-      setLastWeatherUpdate(new Date(weatherCache.timestamp))
-    }
-
-    // Load history cache
-    const historyCache = getCachedData<HistoryDataItem[]>(CACHE_KEYS.HISTORY)
-    if (historyCache && isCacheValid(historyCache.timestamp, CACHE_DURATION.HISTORY)) {
-      setHistoryData(historyCache.data)
-      setLastHistoryUpdate(new Date(historyCache.timestamp))
-    }
-
-    // Load sensor cache
-    const sensorCache = getCachedData<SensorData>(CACHE_KEYS.SENSOR)
-    if (sensorCache && isCacheValid(sensorCache.timestamp, CACHE_DURATION.SENSOR)) {
-      setSensorData(sensorCache.data)
-    }
-  }, [])
+  const [lastWeatherUpdate, setLastWeatherUpdate] = useState<Date | null>(
+    weatherCache ? new Date(weatherCache.timestamp) : null
+  )
+  const [lastHistoryUpdate, setLastHistoryUpdate] = useState<Date | null>(
+    historyCache ? new Date(historyCache.timestamp) : null
+  )
 
   // Fetch weather data
   useEffect(() => {
