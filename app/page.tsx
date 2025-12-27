@@ -19,7 +19,7 @@ export default async function Home() {
   try {
     const to = new Date()
     const from = new Date(to.getTime() - 24 * 60 * 60 * 1000) // Last 24 hours
-    const limit = 200
+    const limit = 50 // Load 50 most recent items
     
     console.log(`[Server] Fetching sensor readings from ${from.toISOString()} to ${to.toISOString()}, limit: ${limit}`)
     

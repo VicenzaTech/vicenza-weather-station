@@ -18,7 +18,13 @@ interface SensorDataTableProps {
   isLoading?: boolean
 }
 
-export default function SensorDataTable({ data, isLoading }: SensorDataTableProps) {
+export default function SensorDataTable({ data, isLoading: isLoadingProp }: SensorDataTableProps) {
+  const [internalData, setInternalData] = useState<SensorReading[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  
+  // Use provided data if available, otherwise use internal state
+  const displayData = (data && data.length > 0) ? data : internalData
+
   // Debug: Log received data
   useEffect(() => {
     console.log('[SensorDataTable] Received data:', data?.length || 0, 'items')
@@ -27,21 +33,54 @@ export default function SensorDataTable({ data, isLoading }: SensorDataTableProp
     }
   }, [data])
 
+  // Fetch data from API if no data provided (only once on mount)
+  useEffect(() => {
+    // Only fetch if no data provided
+    if (!data || data.length === 0) {
+      const fetchData = async () => {
+        setIsLoading(true)
+        try {
+          console.log('[SensorDataTable] Fetching data from API...')
+          const response = await fetch('/api/sensor-history?hours=24&limit=50')
+          const result = await response.json()
+          
+          if (result.data && Array.isArray(result.data)) {
+            console.log('[SensorDataTable] Fetched', result.data.length, 'items from API')
+            // Limit to 50 most recent items (already limited by API, but ensure)
+            const limitedData = result.data.slice(0, 50)
+            setInternalData(limitedData)
+          } else {
+            console.warn('[SensorDataTable] Invalid API response:', result)
+            setInternalData([])
+          }
+        } catch (error) {
+          console.error('[SensorDataTable] Error fetching data:', error)
+          setInternalData([])
+        } finally {
+          setIsLoading(false)
+        }
+      }
+      
+      fetchData()
+    }
+  }, []) // Only run once on mount - check data prop at mount time
+
   const [sortField, setSortField] = useState<keyof SensorReading | null>('timestamp')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [page, setPage] = useState(1)
   const itemsPerPage = 10
 
   const sortedData = useMemo(() => {
-    if (!sortField) return data
-    return [...data].sort((a, b) => {
+    if (!displayData || displayData.length === 0) return []
+    if (!sortField) return displayData
+    return [...displayData].sort((a, b) => {
       const aVal = a[sortField]
       const bVal = b[sortField]
       if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
       if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
       return 0
     })
-  }, [data, sortField, sortDirection])
+  }, [displayData, sortField, sortDirection])
 
   const paginatedData = useMemo(() => {
     const start = (page - 1) * itemsPerPage
@@ -90,7 +129,10 @@ export default function SensorDataTable({ data, isLoading }: SensorDataTableProp
     )
   }
 
-  if (isLoading) {
+  // Use isLoading prop if provided, otherwise use internal loading state
+  const isCurrentlyLoading = isLoadingProp !== undefined ? isLoadingProp : isLoading
+
+  if (isCurrentlyLoading) {
     return (
       <div className="glass-strong rounded-2xl p-6 border border-white/15 shadow-lg shadow-slate-900/40 min-h-[400px] flex items-center justify-center">
         <div className="text-white/50 animate-pulse">Đang tải dữ liệu...</div>
@@ -98,7 +140,7 @@ export default function SensorDataTable({ data, isLoading }: SensorDataTableProp
     )
   }
 
-  if (!data || data.length === 0) {
+  if (!displayData || displayData.length === 0) {
     return (
       <div className="glass-strong rounded-2xl p-6 border border-white/15 shadow-lg shadow-slate-900/40">
         <div className="flex items-center justify-between mb-6">
@@ -135,7 +177,7 @@ export default function SensorDataTable({ data, isLoading }: SensorDataTableProp
         </div>
         <div className="px-3 py-1 rounded-lg bg-white/5 border border-white/10">
           <span className="text-white/60 text-xs">
-            Tổng: {data.length} bản ghi
+            Tổng: {displayData.length} bản ghi
           </span>
         </div>
       </div>
