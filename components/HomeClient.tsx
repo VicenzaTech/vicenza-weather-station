@@ -8,7 +8,9 @@ import Forecast from '@/components/Forecast'
 import Header from '@/components/Header'
 import SensorData from '@/components/SensorData'
 import WeatherBackground from '@/components/WeatherBackground'
+import DashboardKiosk from '@/components/DashboardKiosk'
 import { useApp } from '@/contexts/AppContext'
+import { useState } from 'react'
 
 import SensorCharts from '@/components/SensorCharts'
 import AdvancedSensorDashboard from '@/components/AdvancedSensorDashboard'
@@ -96,6 +98,7 @@ interface HomeClientProps {
 export default function HomeClient({ initialHistoryData }: HomeClientProps) {
   // Use shared context instead of local state
   const { sensorData, weatherData, historyData, isLoadingHistory } = useApp()
+  const [isKioskMode, setIsKioskMode] = useState(false)
 
   // Debug: Log initialHistoryData
   useEffect(() => {
@@ -152,74 +155,39 @@ export default function HomeClient({ initialHistoryData }: HomeClientProps) {
     <main className="min-h-screen relative overflow-hidden">
       <WeatherBackground condition={mergedWeatherData.current.condition} />
       
-      <div className="relative z-10 container mx-auto px-4 py-8">
-        <Header />
+      <div className={`relative z-10 container mx-auto px-4 py-8 transition-all duration-500 ${isKioskMode ? 'max-w-none h-screen flex flex-col' : ''}`}>
+        <Header isKioskMode={isKioskMode} setIsKioskMode={setIsKioskMode} />
 
-        <div className="mt-8">
-          {/* Current Weather */}
-          <CurrentWeather data={sensorData} weather={mergedWeatherData.current} />
-
-          {/* Status Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <WindStatus data={mergedWeatherData.wind} />
-            <SunriseSunset data={mergedWeatherData.sun} />
+        {isKioskMode ? (
+          <div className="flex-1 mt-4 mb-4 overflow-hidden">
+            <DashboardKiosk sensorData={sensorData} weatherData={mergedWeatherData} />
           </div>
-
-          {/* Forecast */}
-          <div className="mt-12">
-            <Forecast data={mergedWeatherData.forecast} />
-          </div>
-
-          {/* Sensor Data */}
+        ) : (
           <div className="mt-8">
-            <SensorData data={sensorData} />
-          </div>
+            {/* Current Weather */}
+            <CurrentWeather data={sensorData} weather={mergedWeatherData.current} />
 
-          {/* Real-time Charts */}
-          <div className="mt-8">
-            <SensorCharts 
-              data={sensorData} 
-              initialHistory={displayHistoryData.length > 0
-                ? displayHistoryData.map(item => ({
-                    temp_room: item.temp_room,
-                    hum_room: item.hum_room,
-                    temp_out: item.temp_out,
-                    lux: item.lux,
-                    ldr_raw: item.ldr_raw,
-                    timestamp: item.timestamp,
-                  }))
-                : undefined
-              }
-            />
-          </div>
-
-          {/* Advanced Dashboard with Multiple Charts */}
-          <div className="mt-8">
-            <div className="flex items-center gap-2 mb-6">
-              <div className="w-1 h-8 bg-gradient-to-b from-blue-400 to-purple-400 rounded-full"></div>
-              <h2 className="text-2xl font-bold text-white">Dashboard Nâng cao</h2>
+            {/* Status Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <WindStatus data={mergedWeatherData.wind} />
+              <SunriseSunset data={mergedWeatherData.sun} />
             </div>
-            <AdvancedSensorDashboard 
-              data={sensorData}
-              initialHistory={displayHistoryData.length > 0
-                ? displayHistoryData.map(item => ({
-                    temp_room: item.temp_room,
-                    hum_room: item.hum_room,
-                    temp_out: item.temp_out,
-                    lux: item.lux,
-                    ldr_raw: item.ldr_raw,
-                    timestamp: item.timestamp,
-                  }))
-                : undefined
-              }
-            />
-          </div>
 
-          {/* Statistics */}
-          <div className="mt-8">
-            <SensorStatistics 
-              history={
-                displayHistoryData.length > 0
+            {/* Forecast */}
+            <div className="mt-12">
+              <Forecast data={mergedWeatherData.forecast} />
+            </div>
+
+            {/* Sensor Data */}
+            <div className="mt-8">
+              <SensorData data={sensorData} />
+            </div>
+
+            {/* Real-time Charts */}
+            <div className="mt-8">
+              <SensorCharts 
+                data={sensorData} 
+                initialHistory={displayHistoryData.length > 0
                   ? displayHistoryData.map(item => ({
                       temp_room: item.temp_room,
                       hum_room: item.hum_room,
@@ -228,26 +196,67 @@ export default function HomeClient({ initialHistoryData }: HomeClientProps) {
                       ldr_raw: item.ldr_raw,
                       timestamp: item.timestamp,
                     }))
-                  : sensorData
-                    ? [{
-                        temp_room: sensorData.temp_room,
-                        hum_room: sensorData.hum_room,
-                        temp_out: sensorData.temp_out,
-                        lux: sensorData.lux,
-                        ldr_raw: sensorData.ldr_raw,
-                        timestamp: sensorData.timestamp,
-                      }]
-                    : []
-              } 
-            />
-          </div>
+                  : undefined
+                }
+              />
+            </div>
 
-          {/* Data Table */}
-          <div className="mt-8">
-            <SensorDataTable data={displayHistoryData} isLoading={isLoadingHistory && displayHistoryData.length === 0} />
-          </div>
+            {/* Advanced Dashboard with Multiple Charts */}
+            <div className="mt-8">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-1 h-8 bg-gradient-to-b from-blue-400 to-purple-400 rounded-full"></div>
+                <h2 className="text-2xl font-bold text-white">Dashboard Nâng cao</h2>
+              </div>
+              <AdvancedSensorDashboard 
+                data={sensorData}
+                initialHistory={displayHistoryData.length > 0
+                  ? displayHistoryData.map(item => ({
+                      temp_room: item.temp_room,
+                      hum_room: item.hum_room,
+                      temp_out: item.temp_out,
+                      lux: item.lux,
+                      ldr_raw: item.ldr_raw,
+                      timestamp: item.timestamp,
+                    }))
+                  : undefined
+                }
+              />
+            </div>
 
-        </div>
+            {/* Statistics */}
+            <div className="mt-8">
+              <SensorStatistics 
+                history={
+                  displayHistoryData.length > 0
+                    ? displayHistoryData.map(item => ({
+                        temp_room: item.temp_room,
+                        hum_room: item.hum_room,
+                        temp_out: item.temp_out,
+                        lux: item.lux,
+                        ldr_raw: item.ldr_raw,
+                        timestamp: item.timestamp,
+                      }))
+                    : sensorData
+                      ? [{
+                          temp_room: sensorData.temp_room,
+                          hum_room: sensorData.hum_room,
+                          temp_out: sensorData.temp_out,
+                          lux: sensorData.lux,
+                          ldr_raw: sensorData.ldr_raw,
+                          timestamp: sensorData.timestamp,
+                        }]
+                      : []
+                } 
+              />
+            </div>
+
+            {/* Data Table */}
+            <div className="mt-8">
+              <SensorDataTable data={displayHistoryData} isLoading={isLoadingHistory && displayHistoryData.length === 0} />
+            </div>
+
+          </div>
+        )}
       </div>
     </main>
   )

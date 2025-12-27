@@ -58,5 +58,13 @@ body {
   .bg-gradient-radial-from-center {
     background: radial-gradient(circle at center, var(--tw-gradient-stops));
   }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
