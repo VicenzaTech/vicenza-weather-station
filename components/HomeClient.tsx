@@ -142,9 +142,10 @@ export default function HomeClient({ initialHistoryData }: HomeClientProps) {
   // Use initialHistoryData if available and context historyData is empty or older
   // Prefer initialHistoryData (from server) over context historyData (from cache/fetch)
   const displayHistoryData = useMemo(() => {
-    const result = initialHistoryData.length > 0 ? initialHistoryData : historyData
-    console.log('[HomeClient] displayHistoryData:', result.length, 'items (initial:', initialHistoryData.length, ', context:', historyData.length, ')')
-    return result
+    // Always prefer initialHistoryData from server if it has data
+    const result = (initialHistoryData && initialHistoryData.length > 0) ? initialHistoryData : historyData
+    console.log('[HomeClient] displayHistoryData:', result?.length || 0, 'items (initial:', initialHistoryData?.length || 0, ', context:', historyData?.length || 0, ')')
+    return result || []
   }, [initialHistoryData, historyData])
 
   return (
@@ -176,7 +177,20 @@ export default function HomeClient({ initialHistoryData }: HomeClientProps) {
 
           {/* Real-time Charts */}
           <div className="mt-8">
-            <SensorCharts data={sensorData} />
+            <SensorCharts 
+              data={sensorData} 
+              initialHistory={displayHistoryData.length > 0
+                ? displayHistoryData.map(item => ({
+                    temp_room: item.temp_room,
+                    hum_room: item.hum_room,
+                    temp_out: item.temp_out,
+                    lux: item.lux,
+                    ldr_raw: item.ldr_raw,
+                    timestamp: item.timestamp,
+                  }))
+                : undefined
+              }
+            />
           </div>
 
           {/* Advanced Dashboard with Multiple Charts */}
@@ -185,7 +199,20 @@ export default function HomeClient({ initialHistoryData }: HomeClientProps) {
               <div className="w-1 h-8 bg-gradient-to-b from-blue-400 to-purple-400 rounded-full"></div>
               <h2 className="text-2xl font-bold text-white">Dashboard Nâng cao</h2>
             </div>
-            <AdvancedSensorDashboard data={sensorData} />
+            <AdvancedSensorDashboard 
+              data={sensorData}
+              initialHistory={displayHistoryData.length > 0
+                ? displayHistoryData.map(item => ({
+                    temp_room: item.temp_room,
+                    hum_room: item.hum_room,
+                    temp_out: item.temp_out,
+                    lux: item.lux,
+                    ldr_raw: item.ldr_raw,
+                    timestamp: item.timestamp,
+                  }))
+                : undefined
+              }
+            />
           </div>
 
           {/* Statistics */}

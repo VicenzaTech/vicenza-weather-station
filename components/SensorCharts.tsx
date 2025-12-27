@@ -15,6 +15,14 @@ import type { SensorData } from '@/lib/mqttService'
 
 interface SensorChartsProps {
   data: SensorData | null
+  initialHistory?: Array<{
+    temp_room: number
+    hum_room: number
+    temp_out: number
+    lux: number
+    ldr_raw: number
+    timestamp: number
+  }>
 }
 
 interface ChartDataPoint {
@@ -51,10 +59,35 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null
 }
 
-export default function SensorCharts({ data }: SensorChartsProps) {
-  const [history, setHistory] = useState<ChartDataPoint[]>([])
+export default function SensorCharts({ data, initialHistory }: SensorChartsProps) {
   const maxPoints = 30 // Keep last 30 data points
 
+  // Initialize history from initialHistory (database data) if available
+  const initializeHistoryFromData = (historyData: typeof initialHistory): ChartDataPoint[] => {
+    if (!historyData || historyData.length === 0) return []
+    
+    return historyData
+      .slice(-maxPoints) // Take last maxPoints items
+      .map(item => ({
+        time: new Date(item.timestamp * 1000).toLocaleTimeString('vi-VN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }),
+        timestamp: item.timestamp * 1000, // Convert to milliseconds
+        temp_room: item.temp_room || 0,
+        temp_out: item.temp_out || 0,
+        hum_room: item.hum_room || 0,
+        lux: item.lux || 0,
+        ldr_raw: item.ldr_raw || 0
+      }))
+  }
+
+  const [history, setHistory] = useState<ChartDataPoint[]>(() => 
+    initializeHistoryFromData(initialHistory)
+  )
+
+  // Update with real-time data
   useEffect(() => {
     if (!data) return
 

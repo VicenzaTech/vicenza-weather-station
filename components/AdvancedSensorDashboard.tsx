@@ -25,6 +25,14 @@ import type { SensorData } from '@/lib/mqttService'
 
 interface AdvancedSensorDashboardProps {
   data: SensorData | null
+  initialHistory?: Array<{
+    temp_room: number
+    hum_room: number
+    temp_out: number
+    lux: number
+    ldr_raw: number
+    timestamp: number
+  }>
 }
 
 interface ChartDataPoint {
@@ -73,11 +81,21 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null
 }
 
-export default function AdvancedSensorDashboard({ data }: AdvancedSensorDashboardProps) {
+export default function AdvancedSensorDashboard({ data, initialHistory }: AdvancedSensorDashboardProps) {
   const [history, setHistory] = useState<ChartDataPoint[]>([])
   const [dbHistory, setDbHistory] = useState<HistoryData | null>(null)
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const maxPoints = 50 // Keep last 50 data points for real-time
+
+  // Initialize dbHistory from initialHistory if provided
+  useEffect(() => {
+    if (initialHistory && initialHistory.length > 0) {
+      setDbHistory({
+        data: initialHistory,
+        count: initialHistory.length
+      })
+    }
+  }, []) // Only run on mount
 
   // Real-time history from live data
   useEffect(() => {
