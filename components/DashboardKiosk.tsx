@@ -86,6 +86,38 @@ export default function DashboardKiosk({ sensorData, weatherData }: DashboardKio
     }
   ]
 
+  const RenderWeatherIcon = ({ iconType, className }: { iconType: string, className?: string }) => {
+    switch (iconType) {
+      case 'storm':
+        return (
+          <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 16.9A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9" strokeLinecap="round" strokeLinejoin="round"/>
+            <polyline points="13 11 9 17 15 17 11 23" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )
+      case 'sun-cloud':
+        return (
+          <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="5" strokeLinecap="round" strokeLinejoin="round"/>
+            <line x1="12" y1="1" x2="12" y2="3" strokeLinecap="round" strokeLinejoin="round"/>
+            <line x1="12" y1="21" x2="12" y2="23" strokeLinecap="round" strokeLinejoin="round"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" strokeLinecap="round" strokeLinejoin="round"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" strokeLinecap="round" strokeLinejoin="round"/>
+            <line x1="1" y1="12" x2="3" y2="12" strokeLinecap="round" strokeLinejoin="round"/>
+            <line x1="21" y1="12" x2="23" y2="12" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )
+      case 'cloud':
+      default:
+        return (
+          <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )
+    }
+  }
+
   return (
     <div className="flex flex-col lg:flex-row h-full gap-6 animate-in fade-in zoom-in duration-500">
       {/* LEFT: Time and Main Status */}
@@ -123,10 +155,16 @@ export default function DashboardKiosk({ sensorData, weatherData }: DashboardKio
         <div className="z-10 mt-10">
           <div className="h-px bg-white/10 w-full mb-8"></div>
           <div className="flex items-center gap-6">
-            <div className="text-6xl font-bold text-white">{displayTemp.toFixed(0)}°</div>
+            <div className="text-6xl font-bold text-white leading-none">{displayTemp.toFixed(0)}°</div>
             <div>
               <div className="text-2xl font-bold text-white/90">{weatherData?.current?.condition || 'N/A'}</div>
               <div className="text-white/50 font-medium">{weatherData?.current?.location || 'Trạm VICENZA'}</div>
+            </div>
+            <div className="ml-auto">
+               <RenderWeatherIcon 
+                 iconType={weatherData?.current?.weatherMain === 'Clear' ? 'sun-cloud' : weatherData?.current?.weatherMain === 'Thunderstorm' ? 'storm' : 'cloud'} 
+                 className="w-16 h-16 text-white/80 filter drop-shadow-xl"
+               />
             </div>
           </div>
         </div>
@@ -144,10 +182,10 @@ export default function DashboardKiosk({ sensorData, weatherData }: DashboardKio
                 {card.icon}
               </div>
               <div className="text-right">
-                <span className="text-white/40 text-xs font-bold uppercase tracking-widest">Live Now</span>
+                <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Live Now</span>
                 <div className="flex items-center gap-1.5 justify-end mt-1">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <span className="text-emerald-500 text-[10px] font-bold uppercase">Connected</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                  <span className="text-emerald-500 text-[9px] font-bold uppercase tracking-tight">Connected</span>
                 </div>
               </div>
             </div>
@@ -164,14 +202,17 @@ export default function DashboardKiosk({ sensorData, weatherData }: DashboardKio
         {/* Forecast Mini Area (Replacing one card slot or adding horizontally) */}
         <div className="md:col-span-2 glass-strong rounded-[2.5rem] p-8 border border-white/10 flex items-center justify-between overflow-x-auto no-scrollbar gap-8">
            {weatherData?.forecast?.slice(0, 5).map((item: any, idx: number) => (
-             <div key={idx} className="flex flex-col items-center min-w-[100px]">
-               <span className="text-white/40 text-sm font-bold uppercase mb-3">{item.day}</span>
-               <img src={item.icon} alt={item.day} className="w-12 h-12 mb-3 filter drop-shadow-lg" />
-               <span className="text-2xl font-black text-white">{item.temp.toFixed(0)}°</span>
+             <div key={idx} className="flex flex-col items-center min-w-[100px] group transition-transform hover:scale-110">
+               <span className="text-white/40 text-xs font-bold uppercase mb-4 tracking-wider">{item.day}</span>
+               <RenderWeatherIcon 
+                 iconType={item.icon} 
+                 className={`w-14 h-14 mb-4 filter drop-shadow-lg ${item.icon === 'storm' ? 'text-yellow-400' : item.icon === 'sun-cloud' ? 'text-yellow-300' : 'text-white/70'}`} 
+               />
+               <span className="text-3xl font-black text-white italic">{item.temp.toFixed(0)}°</span>
              </div>
            ))}
            {(!weatherData?.forecast || weatherData.forecast.length === 0) && (
-             <div className="w-full text-center text-white/30 font-medium">Đang tải dự báo thời tiết...</div>
+             <div className="w-full text-center text-white/30 font-medium py-10">Đang tải dự báo thời tiết...</div>
            )}
         </div>
       </div>
